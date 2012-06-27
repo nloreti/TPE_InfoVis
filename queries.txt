@@ -1,0 +1,6 @@
+SELECT id, nombre, fecha, Nota FROM alumno INNER JOIN nota where nota.idAlumno = alumno.id GROUP BY YEAR(fecha) ORDER BY id
+
+//DEvuelve las notas del alumno con id 5
+SELECT idAlumno, YEAR(fecha), avg(nota) FROM `Nota` WHERE idAlumno = 5 GROUP BY idAlumno,YEAR(fecha)
+
+//eje
