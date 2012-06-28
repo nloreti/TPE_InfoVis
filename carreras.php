@@ -28,17 +28,14 @@ if (!$link) {
 }*/
 
 /* POST DETAILS */
-/*print("<pre>");
-print_r($_POST);
-print("</pre>");*/
+//print("<pre>");
+//print_r($_POST);
+//print("</pre>");
 
 /* Totales de la pregunta 1 */
-$SQL_COUNT = "SELECT count(*) as TOTAL FROM alumno";
+$SQL_COUNT = "SELECT count(*) as TOTAL FROM nota";
 $SQL_MAX = "SELECT max(YEAR(fecha)) as MAX from nota";
 $SQL_MIN = "SELECT min(YEAR(fecha)) as MIN from nota";
-$SQL_alumnos = "SELECT DISTINCT nombre from alumno ORDER BY nombre ASC";
-$SQL_Carreras = "SELECT DISTINCT carrera from Alumno ORDER BY carrera ASC";
-
 
 /*	Nombre de la Base de Datos	*/
 $dbname = "test";
@@ -51,7 +48,6 @@ mysql_select_db($dbname, $link);
 	
 $max=mysql_query($SQL_MAX);
 $min=mysql_query($SQL_MIN);
-
 
 $array_materias;
 $array_carreras;
@@ -75,21 +71,31 @@ if ($maxyear == null){
 	$maxyear = $maxSQL;
 }
 
-$alumnos_origin=mysql_query($SQL_alumnos);
-$carreras_origin=mysql_query($SQL_Carreras);
+if(strcmp($_POST["select"],"Nombre") == 0){
+	$SQL_Materias = "SELECT DISTINCT carrera from Alumno ORDER BY carrera ASC";
+}else if(strcmp($_POST["select"],"Promedio") == 0){
+$SQL_Materias = "SELECT DISTINCT carrera, AVG(Nota) from Alumno INNER JOIN Nota WHERE idAlumno = id AND YEAR(Fecha) >=".$minyear." AND YEAR(Fecha) <= ".$maxyear." GROUP BY carrera ORDER BY AVG(nota) DESC";
+}else{
+	$SQL_Materias = "SELECT DISTINCT carrera, COUNT(*) from Alumno INNER JOIN Nota WHERE idAlumno = id AND YEAR(Fecha) >=".$minyear." AND YEAR(Fecha) <= ".$maxyear." GROUP BY carrera ORDER BY COUNT(*) DESC";
+}
 
+//echo $SQL_Materias;
 
-while ($row = mysql_fetch_assoc($alumnos_origin)){	
-						$array_materias[] = $row["nombre"];
+$materias_origin=mysql_query($SQL_Materias);
+//$carreras_origin=mysql_query($SQL_Carreras);
+
+while ($row = mysql_fetch_assoc($materias_origin)){	
+						$array_materias[] = $row["carrera"];
 						$cantmaterias++;
 };
 
-//while ($row = mysql_fetch_assoc($carreras_origin)){	
-//						$array_carreras[] = $row["carreras"];
-//						$cantcarreras++;
-//};
+while ($row = mysql_fetch_assoc($carreras_origin)){	
+						$array_carreras[] = $row["Carrera"];
+						$cantcarreras++;
+};
+
+//print_r($array_materias);
 $map[$maxyear-$minyear][$cantmaterias];
-$mappromedios[$maxyear-$minyear][$cantmaterias];
 
 /* Traigo si hay materias seleccionadas */
 $cantMateriasConsulta = 0;
@@ -107,66 +113,41 @@ for($i=0; $i < $cantmaterias; $i++){
 }
 //echo "CANT: ".$cantMateriasConsulta."<br/>";
 //print_r($materias_para_consulta);
+//for($i = 0; $i < $maxyear-$minyear; $i++){
+//	for($j = 0; $j<$cantmaterias;$j++){
+//		$map[$i][$j] = "0";
+//	}
+//}
 
-//$SQL = "SELECT nombre, Anio, Promedio FROM Alumno INNER JOIN (SELECT idAlumno, YEAR(Fecha) AS Anio, AVG(Nota) AS Promedio FROM nota WHERE //YEAR(Fecha) >= 1987 AND YEAR(Fecha) <= 2012 GROUP BY YEAR(Fecha),idAlumno) as tbl1 WHERE Alumno.id = tbl1.idAlumno";
 
-$SQL = "SELECT nombre, Anio, Promedio FROM Alumno INNER JOIN (SELECT idAlumno, YEAR(Fecha) AS Anio, AVG(Nota) AS Promedio FROM nota WHERE YEAR(Fecha) >= ".$minyear." AND YEAR(Fecha) <= ".$maxyear." GROUP BY YEAR(Fecha),idAlumno) as tbl1 WHERE Alumno.id = tbl1.idAlumno";
+/* Realizo la consulta final */
+$SQL = "SELECT Carrera as Materia ,YEAR(fecha) as Anio,AVG(nota) as Promedio FROM Alumno INNER JOIN nota AS tbl1 WHERE Alumno.id = tbl1.idAlumno AND year(FECHA) >= ".$minyear." AND YEAR(fecha) <= ".$maxyear; 
 for($i = 0; $i < $cantMateriasConsulta;$i++){
 	if ( $i == 0){
-		$SQL = $SQL . " AND ( Nombre = " ."'$materias_para_consulta[$i]'". " ";
+		$SQL = $SQL . " AND ( Carrera = " ."'$materias_para_consulta[$i]'". " ";
 	}else{
-		$SQL = $SQL . "OR Nombre = " ."'$materias_para_consulta[$i]'". " ";
+		$SQL = $SQL . "OR Carrera = " ."'$materias_para_consulta[$i]'". " ";
 	}
 }
 if($i>0){
-	$SQL = $SQL . ")";
+$SQL = $SQL . " ) ";
 }
-
-$SQL1 = "SELECT nombre, Anio, Promedio
-FROM Alumno
-INNER JOIN (
-SELECT idAlumno, MAX(YEAR( Fecha )) AS Anio, AVG( Nota ) AS Promedio
-FROM nota
-WHERE YEAR( Fecha ) >=1987
-AND YEAR( Fecha ) <=2012
-GROUP BY idAlumno
-) AS tbl1
-WHERE Alumno.id = tbl1.idAlumno AND Anio >= ".$minyear." AND Anio <= ".$maxyear;
-
-//print $SQL1;
+$SQL = $SQL . " GROUP BY Carrera, YEAR(fecha) ORDER BY Promedio DESC";
 //echo $SQL;
 $materias=mysql_query($SQL);
-$promedios=mysql_query($SQL1);//echo "SALI";
-//echo "MAXYEAR".$maxyear;
 
 while ($row = mysql_fetch_assoc($materias)){	
-						$sqlmateria = $row["nombre"];
+						$sqlmateria = $row["Materia"];
 						$sqlanio = $row["Anio"];
 						$sqlpromedio = $row["Promedio"];
 						//print "<br/>";
-						//print $sqlmaterias;
 						$column = array_search($sqlmateria,$array_materias);
 						$year = $sqlanio-$minyear;
 						$map[$year][$column] = $sqlpromedio;
 					//	print $map[$maxyear-$sqlanio][$column];
 					//	print "<br/>";
 };
-
-while ($row = mysql_fetch_assoc($promedios)){	
-						$sqlmateria = $row["nombre"];
-						$sqlanio = $row["Anio"];
-						$sqlpromedio = $row["Promedio"];
-						//print "<br/>";
-						//print $sqlmaterias;
-						$column = array_search($sqlmateria,$array_materias);
-						$year = $sqlanio-$minyear;
-						$mappromedios[$year][$column] = $sqlpromedio;
-					//	print $map[$maxyear-$sqlanio][$column];
-					//	print "<br/>";
-};
-//echo "SALI2";
 $resp;
-$resppromedios;
 for($i = 0; $i < $maxyear-$minyear; $i++){
 	for($j = 0; $j<$cantmaterias;$j++){
 		$cant = $j + 1;
@@ -179,23 +160,15 @@ for($i = 0; $i < $maxyear-$minyear; $i++){
 //	echo "CANT: " . $j . "<br/>";
 }
 
-for($i = 0; $i < $maxyear-$minyear; $i++){
-	for($j = 0; $j<$cantmaterias;$j++){
-		$cant = $j + 1;
-		if ( $cant < $cantmaterias ){
-			$resppromedios[$i] = $resppromedios[$i] . $mappromedios[$i][$j] . ",";
-		}else{
-			$resppromedios[$i] = $resppromedios[$i] . $mappromedios[$i][$j];
-		}
-	}
-//	echo "CANT: " . $j . "<br/>";
-}
+
+//echo $resp[10];
+
+//echo $materias_promedio;
 echo "<script type='text/javascript'>\n";
 echo "var j_array_fecha = new Array();";
-echo "var j_array_promedios = new Array();";
 echo "var j_array_materias = new Array();";
 echo "var j_array_final = new Array();";
-
+echo "var options2 = new Array();";
 
 for($i = 0; $i < $cantmaterias; $i++){
 		echo "j_array_materias.push({'val1':'$array_materias[$i]'});";
@@ -203,14 +176,13 @@ for($i = 0; $i < $cantmaterias; $i++){
 }
 
 for($i = 0; $i < $maxyear-$minyear; $i++){
-						$anio = $minyear + $i;	
+						//$materia = $row["Materia"];
+						//$year = $row["Anio"];
+						//$total = $row["Promedio"];
+						$anio = $minyear + $i;
+					//	var myvar = echo json_encode($myVarValue);
+						
 						echo "j_array_fecha.push({	'val1':'$anio','val2':'$resp[$i]'});";
-};
-
-
-for($i = 0; $i < $maxyear-$minyear; $i++){
-						$anio = $minyear + $i;	
-						echo "j_array_promedios.push({	'val1':'$anio','val2':'$resppromedios[$i]'});";
 };
 
 echo "</script>\n";
@@ -222,7 +194,8 @@ echo "</script>\n";
 <script type="text/javascript">
     $(document).ready(function () {
         $('.dropdown-toggle').dropdown();
-    });
+    var nextButton = document.getElementById('b2');
+});
 </script>
 <script type="text/javascript">
 	
@@ -231,12 +204,12 @@ google.load('visualization', '1', {'packages':['annotatedtimeline']});
   google.load('visualization', '1.0', {'packages':['corechart']});
 	
       // Set a callback to run when the Google Visualization API is loaded.
-      google.setOnLoadCallback(drawChart);   
-	
+      google.setOnLoadCallback(drawChart);
+
       // Callback that creates and populates a data table,
       // instantiates the pie chart, passes in the data and
       // draws it.
-    function drawChart() {
+      function drawChart() {
 
         // Create the data table.
 	var data9 = new google.visualization.DataTable();
@@ -254,7 +227,7 @@ google.load('visualization', '1', {'packages':['annotatedtimeline']});
 		//	vector.push(new Date(j_array_fecha[k].val1,0,1));
 			vector.push(j_array_fecha[k].val1);
 			var values = j_array_fecha[k].val2.split(",");
-			console.log(values);	
+	//		console.log(values);	
 			for( j = 0; j < values.length; j++){
 				//if(j%2 == 0){
 					if(values[j] != "undefined"){
@@ -266,66 +239,44 @@ google.load('visualization', '1', {'packages':['annotatedtimeline']});
 					
 			}
 			
-			
+			//getSortedRows(3)
 			//vector.push(0.0);
 			j_array_final = vector;
-			console.log(vector);
-			data9.addRow(vector);
-	}
-    
-	// Create the data table.
-	var data = new google.visualization.DataTable();
-	
-	data.addColumn('string', 'Date');
-	for( k = 0; k<j_array_materias.length;k++){
-		data.addColumn('number', j_array_materias[k].val1);
-	//	data9.addColumn('string', 'title1');
-	 //  data9.addColumn('string', 'text1');
-	}
-	
-	for( k = 0; k<j_array_promedios.length;k++){
-			//var myvar = <?php echo json_encode($myVarValue); ?>;
-			var vector = new Array();
-		//	vector.push(new Date(j_array_fecha[k].val1,0,1));
-			vector.push(j_array_promedios[k].val1);
-			var values = j_array_promedios[k].val2.split(",");
-			console.log(values);	
-			for( j = 0; j < values.length; j++){
-				//if(j%2 == 0){
-				if(values[j] != "undefined"){
-						vector.push(parseFloat(values[j]));						
-				}else{
-					vector.push(values[j]);
-				}	
-			}
 		//	console.log(vector);
-			data.addRow(vector);
+			data9.addRow(vector);
+		
 	}
 	
     // Set chart options
-    var options = {'width':750,
-                       'height':450,
+    var options = {'width':800,
+                       'height':500,
 						'backgroundColor.strokeWidth':1,
 						'backgroundColor.stroke':'#666',
-						'title': 'Grafico de Alumnos y Promedios',
 						'pointSize':'2'};
 						
-	var options2 = { 	'width':750,
-					    'height':450,
-						'backgroundColor.strokeWidth':1,
-						'backgroundColor.stroke':'#666',
-						'title': 'Grafico de Alumnos y Promedios',
-						'pointSize':'2'};
+	options2 = { 					'width':800,
+					                       'height':500,
+											'backgroundColor.strokeWidth':1,
+											'backgroundColor.stroke':'#666',
+											'pointSize':'2',
 
+										};
+
+									 
 		var datechart = new google.visualization.LineChart(document.getElementById('fechachart_div'));
 		datechart.draw(data9, options);
 		
 		var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
-		chart.draw(data9, options);
+		chart.draw(data9, options2);
 	//	var datechart = new google.visualization.AnnotatedTimeLine(document.getElementById('fechachart_div'));
 	  //  datechart.draw(data9, {displayAnnotations: true});
 	};
 	
+	 nextButton.onclick = function() {
+	      options.hAxis.viewWindow.minValue += 1;
+	      options.hAxis.viewWindow.maxValue += 1;
+	      drawChart();
+	    }
     </script>
 	<div class="navbar">
 	  <div class="navbar-inner">
@@ -337,28 +288,31 @@ google.load('visualization', '1', {'packages':['annotatedtimeline']});
 			  <li>
 			    <a href="./index.php">Home</a>
 			  </li>
-			  <li class="active"><a href="./alumnos.php">Alumnos</a></li>
+			  <li><a href="./alumnos.php">Alumnos</a></li>
 			  <li><a href="./materias.php">Materias</a></li>
-			<li><a href="./carreras.php">Carreras</a></li>
+			<li><a class="active" href="./carreras.php">Carreras</a></li>
+		
 			</ul>
 		</div>
 	  </div>
 	</div>
 	<div class="row" style="margin-left:80px;">
 	  <div class="span4">
-	  		<h1>Form</h1>
-			<form class="well" action="./alumnos.php" method="POST">
-			<label>Fechas</label>
-			<p><input type="text" name="fromyear" placeholder="Fecha inicio"/></p>
-			<p><input type="text" name="toyear" placeholder="Fecha limite"/></p>
+		<h1>Form</h1>
+	  	<form class="well" action="./carreras.php" method="POST">
+				<label>Fechas</label>
+				<p><input type="text" name="fromyear" placeholder="Fecha inicio"/></p>
+				<p><input type="text" name="toyear" placeholder="Fecha limite"/></p>
 				<label>Ordenamiento</label>
 				<select id="select" name="select">
 				                <option>Nombre</option>
+				                <option>Promedio</option>
+								<option>Cantidad de Alumnos</option>
 				</select><label></label>
-			<button type="submit" class="btn">Submit</button>
-			<label></label>
-			<label>Alumnos</label>
-			<label class="checkbox">
+				<button type="submit" class="btn">Submit</button>
+				<label></label>
+				<label>Alumnos</label>
+				<label class="checkbox">
 			<?php $i;
 			for( $i = 0; $i < $cantmaterias; $i++){
 				echo "<input type='checkbox' name='$array_materias[$i]' value='$array_materias[$i]' />".$array_materias[$i]."<br/>";
@@ -368,12 +322,13 @@ google.load('visualization', '1', {'packages':['annotatedtimeline']});
 	  </div>
 	  <div class="span8">
 			<h1>Graficas</h1>
-			<h3>Alumnos y promedios en el tiempo</h3>
-			<div id='fechachart_div' class='chart' style='width: 750px; height: 450px; float:left;'></div><br/>	 
-			<h3>Alumnos y Promedios por a&ntilde;o</h3>
-			<div id="chart_div" class='chart' style="width: 750px; height: 450px; float:left;"></div>
+				<h3>Carrreras y promedios en el tiempo</h3>
+			<div id='fechachart_div' class='chart' style='width: 750px; height: 450px; float:left;'></div><br/>
+			<h3>Carreras y Promedios por a&ntilde;io</h3>
+			<div id="chart_div" class='chart' style="width: 750px; height: 450px; float:left;"></div><br/>
+			
 	  </div>
 	</div>
 
+
 </body>
-</html>

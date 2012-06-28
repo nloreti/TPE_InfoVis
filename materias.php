@@ -37,7 +37,7 @@ $SQL_COUNT = "SELECT count(*) as TOTAL FROM nota";
 $SQL_MAX = "SELECT max(YEAR(fecha)) as MAX from nota";
 $SQL_MIN = "SELECT min(YEAR(fecha)) as MIN from nota";
 $SQL_Materias = "SELECT DISTINCT materia from nota ORDER BY materia ASC";
-$SQL_Carreras = "SELECT DISTINCT carrera from Alumnos ORDER BY carrera ASC";
+$SQL_Carreras = "SELECT DISTINCT carrera from Alumno ORDER BY carrera ASC";
 
 
 /*	Nombre de la Base de Datos	*/
@@ -270,6 +270,7 @@ google.load('visualization', '1', {'packages':['annotatedtimeline']});
 			  </li>
 			  <li><a href="./alumnos.php">Alumnos</a></li>
 			  <li class="active"><a href="./materias.php">Materias</a></li>
+			<li><a href="./carreras.php">Carreras</a></li>
 			</ul>
 		</div>
 	  </div>
@@ -292,8 +293,11 @@ google.load('visualization', '1', {'packages':['annotatedtimeline']});
 		</form>
 	  </div>
 	  <div class="span8">
-		<div id='fechachart_div' class='chart' style='width: 600px; height: 540px; float:left;'></div><br/>	 
-		<div id="chart_div" class='chart' style="width: 900px; height: 500px; float:left;"></div> 	
+			<h1>Graficas</h1>
+			<h3>Materias y promedios en el tiempo</h3>
+			<div id='fechachart_div' class='chart' style='width: 750px; height: 450px; float:left;'></div><br/>	 
+			<h3>Materias y Promedios por a&ntilde;io</h3>
+			<div id="chart_div" class='chart' style="width: 750px; height: 450px; float:left;"></div>
 	  </div>
 	</div>
 

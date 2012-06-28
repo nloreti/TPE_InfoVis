@@ -24,8 +24,6 @@
 			  <li class="active">
 			    <a href="./index.php">Home</a>
 			  </li>
-			  <li><a href="./alumnos.php">Alumnos</a></li>
-			  <li><a href="./materias.php">Materias</a></li>
 			</ul>
 		</div>
 	  </div>
@@ -35,13 +33,13 @@
 	  <h1>ITBA VISUALIZATIONS</h1>
 	  <p>Estadisticas de Alumnos - Materias y Carreras</p>
 	  <p>
-	    <a class="btn btn-primary btn-large">
+	    <a href="./alumnos.php" class="btn btn-primary btn-large">
 	      Alumnos
 	    </a>
-		 <a class="btn btn-primary btn-large">
+		 <a href="./materias.php" class="btn btn-primary btn-large">
 		      Materias
 		 </a>
-		<a class="btn btn-primary btn-large">
+		<a href="./carreras.php" class="btn btn-primary btn-large">
 		      Carreras
 		 </a>
 	  </p>
